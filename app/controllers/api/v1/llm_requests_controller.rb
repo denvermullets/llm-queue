@@ -38,7 +38,7 @@ module Api
       end
 
       def request_params
-        params.permit(payload: {})
+        params.permit(payload: [:prompt, { images: [] }])
       end
 
       def request_type_for_queue
