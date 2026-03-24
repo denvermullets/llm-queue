@@ -30,6 +30,10 @@ production:
   primary: &primary_production
     <<: *default
     url: <%= ENV['DATABASE_URL'] %>
+  queue:
+    <<: *primary_production
+    url: <%= ENV['QUEUE_DATABASE_URL'] %>
+    migrations_paths: db/queue_migrate
   cache:
     <<: *primary_production
     url: <%= ENV['CACHE_DATABASE_URL'] %>

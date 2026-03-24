@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: llm_queue
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U llm_queue"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${PORT:-4100}:80"
+    environment:
+      DATABASE_URL: postgres://llm_queue:${POSTGRES_PASSWORD:-password}@db:5432/llm_queue_production
+      QUEUE_DATABASE_URL: postgres://llm_queue:${POSTGRES_PASSWORD:-password}@db:5432/llm_queue_queue
+      CACHE_DATABASE_URL: postgres://llm_queue:${POSTGRES_PASSWORD:-password}@db:5432/llm_queue_cache
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
+      SOLID_QUEUE_IN_PUMA: "true"
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3.5:2b}
+      OLLAMA_TIMEOUT: ${OLLAMA_TIMEOUT:-300}
+
+volumes:
+  postgres_data:
