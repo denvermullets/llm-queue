@@ -4,12 +4,34 @@ require 'rails/test_help'
 
 module ActiveSupport
   class TestCase
-    # Run tests in parallel with specified workers
-    parallelize(workers: :number_of_processors)
-
-    # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
 
-    # Add more helper methods to be used by all tests here...
+    def with_fake_ollama(client)
+      original = OllamaClient.method(:new)
+      OllamaClient.define_singleton_method(:new) { |**| client }
+      yield
+    ensure
+      OllamaClient.define_singleton_method(:new, original)
+    end
+
+    def with_fake_httparty(response)
+      original = HTTParty.method(:post)
+      HTTParty.define_singleton_method(:post) { |*_args, **_kwargs| response }
+      yield
+    ensure
+      HTTParty.define_singleton_method(:post, original)
+    end
+
+    def with_fake_httparty_capture(response)
+      calls = []
+      original = HTTParty.method(:post)
+      HTTParty.define_singleton_method(:post) do |*args, **kwargs|
+        calls << { args: args, kwargs: kwargs }
+        response
+      end
+      yield calls
+    ensure
+      HTTParty.define_singleton_method(:post, original)
+    end
   end
 end

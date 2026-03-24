@@ -1,0 +1,35 @@
+vek_pending:
+  queue_name: vek
+  request_type: text
+  status: pending
+  priority: 1
+  payload:
+    prompt: "Hello world"
+
+sbc_pending:
+  queue_name: sbc
+  request_type: image
+  status: pending
+  priority: 2
+  payload:
+    prompt: "Describe this image"
+    images:
+      - "data:image/png;base64,abc123"
+
+waxc_processing:
+  queue_name: waxc
+  request_type: image
+  status: processing
+  priority: 3
+  payload:
+    prompt: "What is this?"
+
+ninetynine_completed:
+  queue_name: ninetynine
+  request_type: text
+  status: completed
+  priority: 4
+  payload:
+    prompt: "Tell me a joke"
+  response:
+    result: "Why did the chicken cross the road?"
