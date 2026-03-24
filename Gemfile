@@ -2,8 +2,11 @@ source "https://rubygems.org"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "bootsnap", require: false
+gem "httparty"
 gem "image_processing", "~> 1.2"
+gem "mission_control-jobs"
 gem "pg", "~> 1.1"
+gem "propshaft"
 gem "puma", ">= 5.0"
 gem "rails", "~> 8.1.2"
 gem "solid_cable"
