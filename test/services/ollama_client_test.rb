@@ -1,7 +1,7 @@
 require 'test_helper'
 
 class OllamaClientTest < ActiveSupport::TestCase
-  FakeHTTPResponse = Struct.new(:success, :parsed_response, :code, :body, keyword_init: true) do
+  FakeHTTPResponse = Struct.new(:success, :parsed_response, :code, :body) do
     alias_method :success?, :success
   end
 
