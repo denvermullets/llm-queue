@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+
+echo "🔍 Running pre-commit checks..."
+
+# Step 1: Run rubocop with auto-correct
+echo "Running bin/rubocop -A..."
+bin/rubocop -A
+RUBOCOP_EXIT=$?
+
+# Check if any command failed
+if [ $RUBOCOP_EXIT -ne 0 ]; then
+  echo ""
+  echo "❌ Pre-commit checks failed. Commit aborted."
+  exit 1
+fi
+
+echo ""
+echo "✅ All pre-commit checks passed!"
