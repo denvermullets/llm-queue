@@ -26,6 +26,7 @@ services:
       QUEUE_DATABASE_URL: postgres://llm_queue:${POSTGRES_PASSWORD:-password}@db:5432/llm_queue_queue
       CACHE_DATABASE_URL: postgres://llm_queue:${POSTGRES_PASSWORD:-password}@db:5432/llm_queue_cache
       RAILS_MASTER_KEY: ${RAILS_MASTER_KEY}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
       SOLID_QUEUE_IN_PUMA: "true"
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3.5:2b}
