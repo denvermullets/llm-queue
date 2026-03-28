@@ -29,6 +29,24 @@ class VekJobTest < ActiveSupport::TestCase
     assert_equal 'connection refused', request.response['error']
   end
 
+  test 'delivers webhook on completion' do
+    request = llm_requests(:vek_with_callback)
+    fake = Object.new
+    fake.define_singleton_method(:generate) { |**| 'Generated response' }
+
+    webhook_calls = []
+    original_deliver = WebhookDeliveryService.instance_method(:deliver)
+    WebhookDeliveryService.define_method(:deliver) { webhook_calls << @llm_request.id }
+
+    with_fake_ollama(fake) do
+      VekJob.perform_now(request.id)
+    end
+
+    assert_includes webhook_calls, request.id
+  ensure
+    WebhookDeliveryService.define_method(:deliver, original_deliver) if original_deliver
+  end
+
   test 'is enqueued on the vek queue' do
     assert_equal 'vek', VekJob.new.queue_name
   end

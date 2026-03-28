@@ -5,7 +5,9 @@ module Api
         llm_request = LlmRequest.new(
           queue_name: queue_name,
           request_type: request_type_for_queue,
-          payload: request_params[:payload] || {}
+          payload: request_params[:payload] || {},
+          callback_url: request_params[:callback_url],
+          external_id: request_params[:external_id]
         )
 
         if llm_request.save
@@ -38,7 +40,7 @@ module Api
       end
 
       def request_params
-        params.permit(payload: [:prompt, { images: [] }])
+        params.permit(:callback_url, :external_id, payload: [:prompt, { images: [] }])
       end
 
       def request_type_for_queue

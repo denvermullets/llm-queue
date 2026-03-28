@@ -68,6 +68,28 @@ module Api
         assert_equal({}, request.payload)
       end
 
+      test 'create persists callback_url and external_id' do
+        post api_v1_vek_path, params: {
+          payload: { prompt: 'Hello' },
+          callback_url: 'https://example.com/webhook',
+          external_id: 'ext-123'
+        }, as: :json
+
+        assert_response :created
+        request = LlmRequest.find(response.parsed_body['id'])
+        assert_equal 'https://example.com/webhook', request.callback_url
+        assert_equal 'ext-123', request.external_id
+      end
+
+      test 'create works without callback_url and external_id' do
+        post api_v1_vek_path, params: { payload: { prompt: 'Hello' } }, as: :json
+
+        assert_response :created
+        request = LlmRequest.find(response.parsed_body['id'])
+        assert_nil request.callback_url
+        assert_nil request.external_id
+      end
+
       # GET /api/v1/llm_requests/:id
 
       test 'show returns the llm request' do
