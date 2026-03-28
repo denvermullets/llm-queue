@@ -11,9 +11,12 @@ class SbcJob < ApplicationJob
       images: llm_request.payload['images']
     )
 
-    llm_request.update!(status: 'completed', response: { result: result })
+    parsed = LlmRequest.parse_llm_result(result)
+    llm_request.update!(status: 'completed', response: { result: parsed })
+    WebhookDeliveryService.new(llm_request).deliver
   rescue StandardError => e
     llm_request&.update(status: 'failed', response: { error: e.message })
+    WebhookDeliveryService.new(llm_request).deliver if llm_request&.callback_url.present?
     raise
   end
 end

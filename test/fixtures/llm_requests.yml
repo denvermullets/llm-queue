@@ -33,3 +33,13 @@ ninetynine_completed:
     prompt: "Tell me a joke"
   response:
     result: "Why did the chicken cross the road?"
+
+vek_with_callback:
+  queue_name: vek
+  request_type: text
+  status: pending
+  priority: 1
+  payload:
+    prompt: "Hello world"
+  callback_url: "https://example.com/webhook"
+  external_id: "ext-abc-123"

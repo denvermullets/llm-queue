@@ -72,4 +72,34 @@ class LlmRequestTest < ActiveSupport::TestCase
   test 'STATUSES constant contains expected values' do
     assert_equal %w[pending processing completed failed], LlmRequest::STATUSES
   end
+
+  test 'parse_llm_result strips code fences and parses JSON' do
+    result = "```json\n{\"name\": \"test\"}\n```"
+    parsed = LlmRequest.parse_llm_result(result)
+    assert_equal({ 'name' => 'test' }, parsed)
+  end
+
+  test 'parse_llm_result handles code fences without language tag' do
+    result = "```\n{\"key\": \"value\"}\n```"
+    parsed = LlmRequest.parse_llm_result(result)
+    assert_equal({ 'key' => 'value' }, parsed)
+  end
+
+  test 'parse_llm_result returns plain string when not valid JSON' do
+    result = 'just a plain response'
+    parsed = LlmRequest.parse_llm_result(result)
+    assert_equal 'just a plain response', parsed
+  end
+
+  test 'parse_llm_result parses JSON string without code fences' do
+    result = '{"already": "json"}'
+    parsed = LlmRequest.parse_llm_result(result)
+    assert_equal({ 'already' => 'json' }, parsed)
+  end
+
+  test 'parse_llm_result passes through non-string values' do
+    result = { 'already' => 'a hash' }
+    parsed = LlmRequest.parse_llm_result(result)
+    assert_equal({ 'already' => 'a hash' }, parsed)
+  end
 end

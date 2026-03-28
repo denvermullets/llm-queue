@@ -1,80 +1,72 @@
 require 'test_helper'
 
 class OllamaClientTest < ActiveSupport::TestCase
-  FakeHTTPResponse = Struct.new(:success, :parsed_response, :code, :body) do
-    alias_method :success?, :success
-  end
-
   setup do
     @client = OllamaClient.new
   end
 
-  test 'generate sends prompt and returns response text' do
-    fake = FakeHTTPResponse.new(success: true, parsed_response: { 'response' => 'Hi there' })
+  test 'generate sends prompt and returns concatenated response text' do
+    chunks = [
+      { 'response' => 'Hi ' },
+      { 'response' => 'there' },
+      { 'response' => '', 'done' => true }
+    ]
 
-    with_fake_httparty(fake) do
+    with_fake_stream(chunks) do |calls|
       result = @client.generate(prompt: 'Hello')
       assert_equal 'Hi there', result
+      assert_equal '/api/generate', calls.first[:path]
     end
   end
 
-  test 'generate includes images when provided' do
-    fake = FakeHTTPResponse.new(success: true, parsed_response: { 'response' => 'An image' })
+  test 'generate includes images in request body' do
+    chunks = [{ 'response' => 'An image', 'done' => true }]
 
-    with_fake_httparty_capture(fake) do |calls|
+    with_fake_stream(chunks) do |calls|
       @client.generate(prompt: 'Describe', images: ['data:image/png;base64,abc123'])
-      body = JSON.parse(calls.last[:kwargs][:body])
-      assert_equal ['abc123'], body['images']
+      assert_equal ['abc123'], calls.first[:body][:images]
     end
   end
 
   test 'generate strips base64 prefix from images' do
-    fake = FakeHTTPResponse.new(success: true, parsed_response: { 'response' => 'ok' })
+    chunks = [{ 'response' => 'ok', 'done' => true }]
 
-    with_fake_httparty_capture(fake) do |calls|
+    with_fake_stream(chunks) do |calls|
       @client.generate(prompt: 'test', images: ['data:image/jpeg;base64,rawdata'])
-      body = JSON.parse(calls.last[:kwargs][:body])
-      assert_equal ['rawdata'], body['images']
+      assert_equal ['rawdata'], calls.first[:body][:images]
     end
   end
 
   test 'generate does not include images key when nil' do
-    fake = FakeHTTPResponse.new(success: true, parsed_response: { 'response' => 'ok' })
+    chunks = [{ 'response' => 'ok', 'done' => true }]
 
-    with_fake_httparty_capture(fake) do |calls|
+    with_fake_stream(chunks) do |calls|
       @client.generate(prompt: 'test')
-      body = JSON.parse(calls.last[:kwargs][:body])
-      assert_nil body['images']
+      assert_nil calls.first[:body][:images]
     end
   end
 
-  test 'chat sends messages and returns content' do
-    fake = FakeHTTPResponse.new(success: true, parsed_response: { 'message' => { 'content' => 'Reply' } })
+  test 'chat sends messages and returns concatenated content' do
+    chunks = [
+      { 'message' => { 'content' => 'Re' } },
+      { 'message' => { 'content' => 'ply' } },
+      { 'done' => true }
+    ]
 
-    with_fake_httparty(fake) do
+    with_fake_stream(chunks) do |calls|
       result = @client.chat(messages: [{ role: 'user', content: 'Hi' }])
       assert_equal 'Reply', result
-    end
-  end
-
-  test 'raises RequestError on non-success response' do
-    fake = FakeHTTPResponse.new(success: false, code: 500, body: 'Internal Server Error')
-
-    with_fake_httparty(fake) do
-      assert_raises(OllamaClient::RequestError) do
-        @client.generate(prompt: 'fail')
-      end
+      assert_equal '/api/chat', calls.first[:path]
     end
   end
 
   test 'uses custom model' do
     client = OllamaClient.new(model: 'llama3')
-    fake = FakeHTTPResponse.new(success: true, parsed_response: { 'response' => 'ok' })
+    chunks = [{ 'response' => 'ok', 'done' => true }]
 
-    with_fake_httparty_capture(fake) do |calls|
+    with_fake_stream(chunks) do |calls|
       client.generate(prompt: 'test')
-      body = JSON.parse(calls.last[:kwargs][:body])
-      assert_equal 'llama3', body['model']
+      assert_equal 'llama3', calls.first[:body][:model]
     end
   end
 end

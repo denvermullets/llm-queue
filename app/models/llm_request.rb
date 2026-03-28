@@ -14,6 +14,18 @@ class LlmRequest < ApplicationRecord
   scope :pending, -> { where(status: 'pending') }
   scope :by_priority, -> { order(priority: :asc, created_at: :asc) }
 
+  def self.parse_llm_result(result)
+    return result unless result.is_a?(String)
+
+    JSON.parse(strip_code_fences(result))
+  rescue JSON::ParserError
+    result
+  end
+
+  def self.strip_code_fences(text)
+    text.gsub(/\A\s*```\w*\n?/, '').gsub(/\n?```\s*\z/, '')
+  end
+
   private
 
   def set_priority

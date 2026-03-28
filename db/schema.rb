@@ -10,12 +10,14 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_24_111323) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_28_132006) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "llm_requests", force: :cascade do |t|
+    t.string "callback_url"
     t.datetime "created_at", null: false
+    t.string "external_id"
     t.jsonb "payload", default: {}, null: false
     t.integer "priority", default: 0, null: false
     t.string "queue_name", null: false
@@ -23,6 +25,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_24_111323) do
     t.jsonb "response"
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "webhook_payload"
+    t.datetime "webhook_sent_at"
+    t.string "webhook_status"
     t.index ["priority", "created_at"], name: "index_llm_requests_on_priority_and_created_at"
     t.index ["queue_name"], name: "index_llm_requests_on_queue_name"
     t.index ["status"], name: "index_llm_requests_on_status"
