@@ -5,12 +5,7 @@ class SbcJob < ApplicationJob
     llm_request = LlmRequest.find(llm_request_id)
     llm_request.update!(status: 'processing')
 
-    ocr_text = extract_text(llm_request)
-    prompt = build_prompt(llm_request, ocr_text)
-
-    client = OllamaClient.new
-    result = client.generate(prompt: prompt)
-
+    result = process_image(llm_request, llm_request_id)
     parsed = LlmRequest.parse_llm_result(result)
     llm_request.update!(status: 'completed', response: { result: parsed })
     WebhookDeliveryService.new(llm_request).deliver
@@ -21,6 +16,16 @@ class SbcJob < ApplicationJob
   end
 
   private
+
+  def process_image(llm_request, llm_request_id)
+    ocr_text = extract_text(llm_request)
+    Rails.logger.info("SbcJob##{llm_request_id} OCR extracted #{ocr_text.length} chars: #{ocr_text.truncate(500)}")
+
+    prompt = build_prompt(llm_request, ocr_text)
+    result = OllamaClient.new.generate(prompt: prompt)
+    Rails.logger.info("SbcJob##{llm_request_id} LLM result #{result.length} chars: #{result.truncate(500)}")
+    result
+  end
 
   def extract_text(llm_request)
     images = llm_request.payload.fetch('images', [])

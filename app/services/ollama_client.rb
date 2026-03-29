@@ -9,12 +9,12 @@ class OllamaClient
     @model = model
   end
 
-  def generate(prompt:, images: nil)
-    body = { model: @model, prompt: prompt, stream: true }
+  def generate(prompt:, images: nil, think: false)
+    body = { model: @model, prompt: prompt, stream: true, think: think }
     body[:images] = Array(images).map { |img| strip_base64_prefix(img) } if images
 
     chunks = stream_request('/api/generate', body)
-    chunks.map { |chunk| chunk['response'] }.compact.join
+    extract_generate_text(chunks)
   end
 
   def chat(messages:)
@@ -31,6 +31,13 @@ class OllamaClient
   end
 
   private
+
+  def extract_generate_text(chunks)
+    response = chunks.map { |c| c['response'] }.compact.join
+    return response unless response.empty?
+
+    chunks.map { |c| c['thinking'] }.compact.join
+  end
 
   def strip_base64_prefix(str)
     str.sub(%r{^data:image/[^;]+;base64,}, '')
