@@ -28,6 +28,14 @@ module ActiveSupport
       OllamaClient.define_method(:stream_request, original)
     end
 
+    def with_fake_ocr(text)
+      original = OcrService.instance_method(:extract_text)
+      OcrService.define_method(:extract_text) { text }
+      yield
+    ensure
+      OcrService.define_method(:extract_text, original)
+    end
+
     def with_fake_httparty(response)
       original = HTTParty.method(:post)
       HTTParty.define_singleton_method(:post) { |*_args, **_kwargs| response }

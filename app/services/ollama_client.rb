@@ -1,6 +1,6 @@
 class OllamaClient
   BASE_URL = ENV.fetch('OLLAMA_BASE_URL', 'http://localhost:11434')
-  DEFAULT_MODEL = ENV.fetch('OLLAMA_MODEL', 'qwen3.5:0.8b')
+  DEFAULT_MODEL = ENV.fetch('OLLAMA_MODEL', 'qwen3.5:2b')
   TIMEOUT = ENV.fetch('OLLAMA_TIMEOUT', 300).to_i
 
   class RequestError < StandardError; end

@@ -5,10 +5,12 @@ gem "bootsnap", require: false
 gem "httparty"
 gem "image_processing", "~> 1.2"
 gem "mission_control-jobs"
+gem "ostruct"
 gem "pg", "~> 1.1"
 gem "propshaft"
 gem "puma", ">= 5.0"
 gem "rails", "~> 8.1.2"
+gem "rtesseract"
 gem "solid_cache"
 gem "solid_queue"
 gem "thruster", require: false
