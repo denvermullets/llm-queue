@@ -10,6 +10,8 @@ class OllamaClient
   end
 
   def generate(prompt:, images: nil, think: false)
+    ensure_model_loaded
+
     body = { model: @model, prompt: prompt, stream: true, think: think }
     body[:images] = Array(images).map { |img| strip_base64_prefix(img) } if images
 
@@ -39,6 +41,50 @@ class OllamaClient
     chunks.map { |c| c['thinking'] }.compact.join
   end
 
+  def ensure_model_loaded
+    check_model_available
+    warm_up_model
+  rescue StandardError => e
+    Rails.logger.warn("OllamaClient: warmup failed (#{e.class}: #{e.message}), proceeding anyway")
+  end
+
+  def check_model_available
+    uri = URI("#{BASE_URL}/api/show")
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = uri.scheme == 'https'
+    http.read_timeout = 10
+
+    request = Net::HTTP::Post.new(uri.path, { 'Content-Type' => 'application/json' })
+    request.body = { model: @model }.to_json
+
+    response = http.request(request)
+    return if response.is_a?(Net::HTTPSuccess)
+
+    Rails.logger.warn("OllamaClient: model #{@model} not available (#{response.code}), pulling...")
+    pull_model
+  end
+
+  def warm_up_model
+    Rails.logger.info("OllamaClient: warming up model #{@model}")
+    warmup_body = { model: @model, prompt: 'hi', stream: false, keep_alive: '30m' }
+    warmup_http = build_http_client('/api/generate')
+    warmup_http.read_timeout = TIMEOUT
+    warmup_req = build_post_request('/api/generate', warmup_body)
+    warmup_http.request(warmup_req)
+    Rails.logger.info("OllamaClient: model #{@model} is loaded and ready")
+  end
+
+  def pull_model
+    uri = URI("#{BASE_URL}/api/pull")
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = uri.scheme == 'https'
+    http.read_timeout = 600
+
+    request = Net::HTTP::Post.new(uri.path, { 'Content-Type' => 'application/json' })
+    request.body = { name: @model, stream: false }.to_json
+    http.request(request)
+  end
+
   def strip_base64_prefix(str)
     str.sub(%r{^data:image/[^;]+;base64,}, '')
   end
@@ -48,13 +94,20 @@ class OllamaClient
     request = build_post_request(path, body)
 
     chunks = []
-    http.request(request) do |response|
-      unless response.is_a?(Net::HTTPSuccess)
-        raise RequestError, "Ollama API error (#{response.code}): #{response.body}"
-      end
+    begin
+      http.request(request) do |response|
+        unless response.is_a?(Net::HTTPSuccess)
+          raise RequestError, "Ollama API error (#{response.code}): #{response.body}"
+        end
 
-      chunks.concat(parse_stream(response))
+        chunks.concat(parse_stream(response))
+      end
+    rescue Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Net::OpenTimeout, Net::ReadTimeout => e
+      Rails.logger.error("OllamaClient: connection failed to #{BASE_URL}#{path}: #{e.class} - #{e.message}")
+      raise RequestError, "Ollama unavailable: #{e.message}"
     end
+
+    Rails.logger.info("OllamaClient: received #{chunks.size} chunks from #{path}")
     chunks
   end
 

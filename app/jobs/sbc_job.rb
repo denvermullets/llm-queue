@@ -22,8 +22,20 @@ class SbcJob < ApplicationJob
     Rails.logger.info("SbcJob##{llm_request_id} OCR extracted #{ocr_text.length} chars: #{ocr_text.truncate(500)}")
 
     prompt = build_prompt(llm_request, ocr_text)
+    generate_with_retry(prompt, llm_request_id)
+  end
+
+  def generate_with_retry(prompt, llm_request_id)
+    Rails.logger.info("SbcJob##{llm_request_id} Sending prompt (#{prompt.length} chars) to Ollama model #{OllamaClient::DEFAULT_MODEL}")
     result = OllamaClient.new.generate(prompt: prompt)
     Rails.logger.info("SbcJob##{llm_request_id} LLM result #{result.length} chars: #{result.truncate(500)}")
+
+    if result.blank? || result.strip == '[]'
+      Rails.logger.warn("SbcJob##{llm_request_id} LLM returned empty result, retrying once...")
+      result = OllamaClient.new.generate(prompt: prompt)
+      Rails.logger.info("SbcJob##{llm_request_id} LLM retry result #{result.length} chars: #{result.truncate(500)}")
+    end
+
     result
   end
 
