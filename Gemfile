@@ -3,7 +3,7 @@ source "https://rubygems.org"
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "bootsnap", require: false
 gem "httparty"
-gem "image_processing", "~> 1.2"
+gem "image_processing", "~> 2.0"
 gem "mission_control-jobs"
 gem "ostruct"
 gem "pg", "~> 1.1"
